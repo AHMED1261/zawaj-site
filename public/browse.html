@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تصفح البروفايلات</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container wide">
+    <h1>تصفح البروفايلات المعتمدة</h1>
+
+    <div class="filters">
+      <label>النوع
+        <select id="f_gender">
+          <option value="">الكل</option>
+          <option value="male">عريس</option>
+          <option value="female">عروس</option>
+        </select>
+      </label>
+      <label>من سن <input type="number" id="f_minAge" placeholder="18"></label>
+      <label>لحد سن <input type="number" id="f_maxAge" placeholder="90"></label>
+      <label>المحافظة (اكتب) <input type="text" id="f_governorate" placeholder="مثلاً القاهرة"></label>
+      <label>الحالة الاجتماعية
+        <select id="f_maritalStatus">
+          <option value="">الكل</option>
+          <option value="single">أعزب</option>
+          <option value="married">متزوج</option>
+          <option value="divorced">مطلق</option>
+          <option value="widowed">أرمل</option>
+          <option value="separated">منفصل</option>
+        </select>
+      </label>
+      <label>عايز يخلف؟
+        <select id="f_wantsChildren">
+          <option value="">الكل</option>
+          <option value="yes">نعم</option>
+          <option value="no">لا</option>
+          <option value="maybe">لسه مقررش</option>
+        </select>
+      </label>
+      <label>المؤهل الدراسي (اكتب) <input type="text" id="f_education" placeholder="مثلاً بكالوريوس"></label>
+      <label>الوظيفة (اكتب) <input type="text" id="f_job" placeholder="مثلاً مهندس"></label>
+      <label>مستوى التدين (اكتب) <input type="text" id="f_religiosityLevel" placeholder="مثلاً ملتزم"></label>
+      <label>مدخن؟
+        <select id="f_smoker">
+          <option value="">الكل</option>
+          <option value="yes">نعم</option>
+          <option value="no">لا</option>
+        </select>
+      </label>
+      <button id="applyFilters">فلترة</button>
+    </div>
+
+    <div id="results" class="grid"></div>
+    <div id="pagination"></div>
+  </div>
+
+<script>
+async function loadProfiles(page = 1) {
+  const params = new URLSearchParams();
+  const ids = ['gender','minAge','maxAge','governorate','maritalStatus','wantsChildren','education','job','religiosityLevel','smoker'];
+  const map = { gender:'f_gender', minAge:'f_minAge', maxAge:'f_maxAge', governorate:'f_governorate',
+    maritalStatus:'f_maritalStatus', wantsChildren:'f_wantsChildren', education:'f_education',
+    job:'f_job', religiosityLevel:'f_religiosityLevel', smoker:'f_smoker' };
+  ids.forEach(key => {
+    const val = document.getElementById(map[key]).value;
+    if (val) params.set(key, val);
+  });
+  params.set('page', page);
+  params.set('limit', 12);
+
+  const res = await fetch('/api/profiles?' + params.toString());
+  const result = await res.json();
+  renderResults(result);
+}
+
+const maritalLabels = { single:'أعزب', married:'متزوج', divorced:'مطلق', widowed:'أرمل', separated:'منفصل' };
+const childrenLabels = { yes:'عايز يخلف', no:'مش عايز يخلف', maybe:'لسه مقررش' };
+
+function renderResults(result) {
+  const container = document.getElementById('results');
+  container.innerHTML = '';
+  if (!result.data.length) { container.innerHTML = '<p>مفيش نتائج مطابقة</p>'; }
+  result.data.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <h3>${p.gender === 'male' ? 'عريس' : 'عروس'} - ${p.age} سنة</h3>
+      <p>${p.governorate || ''}</p>
+      <p>${maritalLabels[p.marital_status] || ''} · ${childrenLabels[p.wants_more_children] || ''}</p>
+      <p>${p.education || ''} - ${p.job || ''}</p>
+      <p class="bio">${(p.about_me || '').slice(0, 100)}</p>
+    `;
+    container.appendChild(card);
+  });
+  renderPagination(result.total, result.page, result.limit);
+}
+
+function renderPagination(total, page, limit) {
+  const pages = Math.ceil(total / limit);
+  const pag = document.getElementById('pagination');
+  pag.innerHTML = '';
+  for (let i = 1; i <= pages; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = i;
+    if (i === page) btn.className = 'active';
+    btn.onclick = () => loadProfiles(i);
+    pag.appendChild(btn);
+  }
+}
+
+document.getElementById('applyFilters').addEventListener('click', () => loadProfiles(1));
+loadProfiles();
+</script>
+</body>
+</html>
