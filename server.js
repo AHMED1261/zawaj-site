@@ -84,9 +84,10 @@ app.post('/api/profile/submit', requireAuth, async (req, res) => {
     // تحقق: كل الحقول إلزامية
     const missing = ANSWER_FIELDS.filter(f => data[f] === undefined || data[f] === null || data[f] === '');
     // بعض الحقول شرطية (مش لازم تتملى لو السؤال مبيتسألش أصلاً) - بنسمح فراغها لو منطقيًا مش مطلوبة
-    const conditionallyOptional = new Set([
+  const conditionallyOptional = new Set([
       'children_count','children_ages','custody','widow_duration','last_divorce_date','divorce_count',
-      'current_wives_count','polygamy_with_first_wife_knowledge','relative_relation'
+      'current_wives_count','wants_polygamy','polygamy_with_first_wife_knowledge','relative_relation',
+      'family_house_living','filled_with_knowledge','accepted_governorates','has_beard','hijab_preference'
     ]);
     const trulyMissing = missing.filter(f => !conditionallyOptional.has(f));
     if (trulyMissing.length) {
