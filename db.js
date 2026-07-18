@@ -1,5 +1,4 @@
 // db.js - MySQL connection pool
-// Hostinger بيدي بيانات الاتصال دي من hPanel -> Databases -> MySQL Databases
 require('dotenv').config();
 const mysql = require('mysql2/promise');
 
@@ -12,7 +11,9 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: true } : undefined
+  // ملحوظة: rejectUnauthorized:false بيسيب البيانات مشفرة في النقل، بس مبيتحققش من هوية شهادة السيرفر.
+  // ده كافي لمشروع مبدئي على Aiven، ولو عايز أمان أعلى بعدين ممكن تضيف شهادة CA بتاعة Aiven بدل كده.
+  ssl: process.env.DB_SSL === 'true' ? { rejectUnauthorized: false } : undefined
 });
 
 async function initSchema() {
