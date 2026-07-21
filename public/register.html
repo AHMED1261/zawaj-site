@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إنشاء حساب</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container auth-card">
+    <a class="back-link" href="index.html">← العودة للرئيسية</a>
+    <span class="eyebrow">خطوة آمنة</span>
+    <h1>أنشئ حسابك</h1>
+    <p class="intro">نؤكد ملكيتك للبريد الإلكتروني برمز آمن قبل إنشاء الحساب.</p>
+    <form id="registerForm">
+      <label>رقم الهاتف
+        <div class="input-action"><input type="tel" name="phone" inputmode="numeric" placeholder="01xxxxxxxxx" required><button type="button" class="button-outline" id="sendCodeBtn">إرسال الرمز</button></div>
+      </label>
+      <label>البريد الإلكتروني <input type="email" name="email" autocomplete="email" placeholder="name@example.com" required></label>
+      <label>رمز البريد الإلكتروني <input type="text" name="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6 أرقام" required></label>
+      <label>كلمة المرور
+        <input type="password" name="password" minlength="8" required>
+      </label>
+      <label>النوع
+        <select name="gender" required>
+          <option value="">اختر</option>
+          <option value="male">عريس</option>
+          <option value="female">عروس</option>
+        </select>
+      </label>
+      <label class="consent"><input type="checkbox" name="termsAccepted" value="yes" required> أوافق على <a href="terms.html" target="_blank">شروط الاستخدام</a> و<a href="privacy.html" target="_blank">سياسة الخصوصية</a>.</label>
+      <button type="submit">تأكيد وإنشاء الحساب</button>
+    </form>
+    <p id="msg"></p>
+    <p>عندك حساب؟ <a href="login.html">سجّل دخول</a></p>
+  </div>
+
+<script>
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target).entries());
+  const msg = document.getElementById('msg');
+  msg.textContent = 'جاري الإرسال...';
+  try {
+    const res = await fetch('/api/register', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (!res.ok) { msg.textContent = result.error; msg.className = 'error'; return; }
+    localStorage.setItem('token', result.token);
+    localStorage.setItem('gender', data.gender);
+    msg.textContent = 'تم إنشاء الحساب! هنحولك لاستمارة البيانات...';
+    msg.className = 'success';
+    setTimeout(() => window.location.href = 'form.html', 1200);
+  } catch (err) {
+    msg.textContent = 'حصل خطأ في الاتصال بالسيرفر';
+    msg.className = 'error';
+  }
+});
+
+document.getElementById('sendCodeBtn').addEventListener('click', async () => {
+  const phone = document.querySelector('[name="phone"]').value;
+  const button = document.getElementById('sendCodeBtn');
+  const msg = document.getElementById('msg');
+  button.disabled = true; msg.textContent = 'جاري إرسال الرمز إلى بريدك الإلكتروني...'; msg.className = '';
+  try {
+    const email = document.querySelector('[name="email"]').value;
+    const res = await fetch('/api/auth/request-code', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ phone, email, purpose:'register' }) });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+    msg.textContent = data.message; msg.className = 'success';
+  } catch (error) { msg.textContent = error.message || 'تعذر إرسال الرمز.'; msg.className = 'error'; }
+  finally { button.disabled = false; }
+});
+</script>
+</body>
+</html>

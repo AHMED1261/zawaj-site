@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>حسابي</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .container.wide { max-width:1000px; }
+  .topbar { display:flex; justify-content:space-between; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:18px; }
+  .topbar a, .topbar button { width:auto; text-decoration:none; font-size:14px; padding:10px 14px; }
+  .status { padding:12px; border-radius:8px; background:#f0e9e2; margin-bottom:18px; }
+  .status.approved { background:#e7f6ec; color:#176b37; }
+  .status.pending { background:#fff8dc; color:#755d00; }
+  .status.rejected, .status.suspended { background:#fdeaea; color:#9a2525; }
+  .sections { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:16px; }
+  .section { background:#fff; border:1px solid #eee; border-radius:10px; padding:16px; }
+  .section h2 { font-size:17px; margin-top:0; }
+  .request, .conversation { border-top:1px solid #eee; padding:12px 0; }
+  .request:first-child, .conversation:first-child { border-top:0; }
+  .muted { color:#666; font-size:13px; }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; margin-top:8px; }
+  .actions button { width:auto; padding:8px 11px; font-size:13px; }
+  .danger { background:#c0392b; }
+  .chat { margin-top:20px; background:#fff; border:1px solid #eee; border-radius:10px; padding:16px; }
+  .messages { max-height:330px; overflow:auto; border:1px solid #eee; padding:10px; border-radius:8px; margin:10px 0; }
+  .message { padding:9px; margin:7px 0; border-radius:8px; background:#f7f5f2; }
+  .message.admin { background:#eaf3ff; }
+  .message small { display:block; color:#666; margin-top:4px; }
+  .send-row { display:flex; gap:8px; }
+  .send-row textarea { flex:1; }
+</style>
+</head>
+<body>
+  <div class="container wide">
+    <div class="topbar">
+      <h1>حسابي</h1>
+      <div>
+        <a href="browse.html" id="browseLink">تصفح البروفايلات</a>
+        <button id="logoutBtn" class="danger">تسجيل الخروج</button>
+      </div>
+    </div>
+    <div id="accountStatus" class="status">جاري تحميل الحساب...</div>
+    <div class="sections" id="sections" hidden>
+      <section class="section">
+        <h2>البروفايل</h2>
+        <p id="profileText" class="muted"></p>
+        <div class="actions"><a id="profileAction" href="form.html">إكمال الاستمارة</a></div>
+      </section>
+      <section class="section">
+        <h2>طلبات أرسلتها</h2><div id="sentRequests"></div>
+      </section>
+      <section class="section">
+        <h2>طلبات وصلتني</h2><div id="receivedRequests"></div>
+      </section>
+      <section class="section">
+        <h2>المراسلات عبر الإدارة</h2><div id="conversations"></div>
+      </section>
+    </div>
+    <section class="chat" id="chat" hidden>
+      <h2 id="chatTitle">مراسلة عبر الإدارة</h2>
+      <p class="muted">رسائلك تصل للإدارة أولاً، والإدارة تنقل ما تراه مناسباً للطرف الآخر.</p>
+      <div class="messages" id="messages"></div>
+      <div class="send-row"><textarea id="messageBody" rows="3" maxlength="1000" placeholder="اكتب رسالتك للإدارة"></textarea><button id="sendMessageBtn">إرسال للإدارة</button></div>
+      <p id="chatMsg"></p>
+    </section>
+  </div>
+<script>
+const token = localStorage.getItem('token');
+if (!token) window.location.href = 'login.html';
+const headers = { 'Content-Type':'application/json', 'Authorization':'Bearer ' + token };
+let activeConversationId = null;
+const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+const statusLabels = { incomplete:'مسودة غير مكتملة', pending:'قيد مراجعة الإدارة', approved:'حساب معتمد', rejected:'تم رفض الحساب', suspended:'الحساب موقوف' };
+const requestLabels = { pending:'بانتظار رد الطرف الآخر', matched:'تم التوافق — لدى الإدارة', declined:'لم تتم الموافقة', withdrawn:'تم إلغاء الطلب', closed:'مغلق' };
+
+function profileLine(item) { return `${item.gender === 'male' ? 'عريس' : 'عروس'} — ${item.age || '-'} سنة — ${escapeHtml(item.governorate || '')}`; }
+async function api(url, options = {}) {
+  const res = await fetch(url, { ...options, headers: { ...headers, ...(options.headers || {}) } });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data.error || 'حصل خطأ');
+  return data;
+}
+async function loadAccount() {
+  try {
+    const me = await api('/api/me');
+    const box = document.getElementById('accountStatus');
+    box.className = 'status ' + me.status;
+    box.textContent = statusLabels[me.status] || me.status;
+    if (me.admin_notes) box.textContent += ' — ملاحظة الإدارة: ' + me.admin_notes;
+    const profileAction = document.getElementById('profileAction');
+    const profileText = document.getElementById('profileText');
+    if (me.status === 'incomplete') { profileText.textContent = me.has_profile ? 'تم حفظ جزء من الاستمارة كمسودة.' : 'لم تبدأ الاستمارة بعد.'; profileAction.textContent = me.has_profile ? 'استكمال المسودة' : 'بدء الاستمارة'; }
+    else { profileText.textContent = 'تم إرسال بياناتك. لتصحيح أي معلومة، تواصل مع الإدارة.'; profileAction.hidden = true; }
+    document.getElementById('browseLink').hidden = me.status !== 'approved';
+    document.getElementById('sections').hidden = false;
+    if (me.status === 'approved') await Promise.all([loadRequests(), loadConversations()]);
+    else { document.getElementById('sentRequests').innerHTML = '<p class="muted">تتاح بعد اعتماد الحساب.</p>'; document.getElementById('receivedRequests').innerHTML = '<p class="muted">تتاح بعد اعتماد الحساب.</p>'; document.getElementById('conversations').innerHTML = '<p class="muted">تتاح بعد اعتماد الحساب.</p>'; }
+  } catch (err) { document.getElementById('accountStatus').textContent = err.message; document.getElementById('accountStatus').className = 'status rejected'; }
+}
+function requestHtml(item, incoming) {
+  const buttons = incoming && item.status === 'pending' ? `<button onclick="respondRequest(${item.id}, 'accept')">موافقة</button><button class="danger" onclick="respondRequest(${item.id}, 'decline')">رفض</button>` : (!incoming && item.status === 'pending' ? `<button class="danger" onclick="withdrawRequest(${item.id})">إلغاء الطلب</button>` : '');
+  return `<div class="request"><strong>${profileLine(item)}</strong><div class="muted">${requestLabels[item.status] || item.status}</div><div class="actions">${buttons}</div></div>`;
+}
+async function loadRequests() {
+  const requests = await api('/api/requests');
+  const sent = requests.filter(item => item.direction === 'sent');
+  const received = requests.filter(item => item.direction === 'received');
+  document.getElementById('sentRequests').innerHTML = sent.length ? sent.map(item => requestHtml(item, false)).join('') : '<p class="muted">لم ترسل طلبات بعد.</p>';
+  document.getElementById('receivedRequests').innerHTML = received.length ? received.map(item => requestHtml(item, true)).join('') : '<p class="muted">لا توجد طلبات جديدة.</p>';
+}
+async function respondRequest(id, action) { try { await api(`/api/requests/${id}/${action}`, { method:'POST' }); await Promise.all([loadRequests(), loadConversations()]); } catch (err) { alert(err.message); } }
+async function withdrawRequest(id) { try { await api(`/api/requests/${id}/withdraw`, { method:'POST' }); await loadRequests(); } catch (err) { alert(err.message); } }
+async function loadConversations() {
+  const conversations = await api('/api/conversations');
+  document.getElementById('conversations').innerHTML = conversations.length ? conversations.map(item => `<div class="conversation"><strong>${profileLine(item)}</strong><div class="muted">${item.status === 'active' ? 'مراسلة مفتوحة' : 'مراسلة مغلقة'}</div><div class="actions"><button onclick="openConversation(${item.id})">فتح المراسلة</button></div></div>`).join('') : '<p class="muted">لا توجد مراسلات حالياً.</p>';
+}
+async function openConversation(id) {
+  activeConversationId = id; document.getElementById('chat').hidden = false; document.getElementById('chatTitle').textContent = 'مراسلة عبر الإدارة'; await loadMessages(); window.scrollTo({ top: document.body.scrollHeight, behavior:'smooth' });
+}
+async function loadMessages() {
+  const messages = await api(`/api/conversations/${activeConversationId}/messages`);
+  document.getElementById('messages').innerHTML = messages.length ? messages.map(item => `<div class="message ${item.sender_role === 'admin' ? 'admin' : ''}"><strong>${item.sender_role === 'admin' ? 'الإدارة' : 'أنت'}</strong><br>${escapeHtml(item.body)}<small>${new Date(item.created_at).toLocaleString('ar-EG')}</small></div>`).join('') : '<p class="muted">لا توجد رسائل بعد.</p>';
+}
+document.getElementById('sendMessageBtn').addEventListener('click', async () => { const input = document.getElementById('messageBody'); try { const result = await api(`/api/conversations/${activeConversationId}/messages`, { method:'POST', body:JSON.stringify({ body:input.value }) }); input.value = ''; document.getElementById('chatMsg').textContent = result.message; await loadMessages(); } catch (err) { document.getElementById('chatMsg').textContent = err.message; } });
+document.getElementById('logoutBtn').addEventListener('click', () => { localStorage.removeItem('token'); localStorage.removeItem('gender'); window.location.href = 'index.html'; });
+loadAccount();
+</script>
+</body>
+</html>

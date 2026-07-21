@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>بروفايل</title>
+<link rel="stylesheet" href="style.css">
+<style>.container { max-width:700px; }.row { border-top:1px solid #eee; padding:10px 0; }.row:first-child { border-top:0; }.back { display:inline-block; margin-bottom:16px; color:#77583d; }.notice { color:#666; font-size:13px; line-height:1.7; }</style>
+</head>
+<body>
+  <div class="container">
+    <a class="back" href="browse.html">← العودة للتصفح</a>
+    <div id="profile"><p>جاري التحميل...</p></div>
+    <p class="notice">لا تظهر أرقام الهاتف أو البيانات الحساسة. إرسال الطلب لا يشارك أي وسيلة اتصال مباشرة.</p>
+    <button id="requestBtn" hidden>إرسال طلب تعارف</button>
+    <p id="msg"></p>
+  </div>
+<script>
+const token = localStorage.getItem('token');
+if (!token) window.location.href = 'login.html';
+const id = new URLSearchParams(location.search).get('id');
+const labels = { age:'السن', height:'الطول', skin_color:'لون البشرة', education:'المؤهل', job:'العمل', income_level:'مستوى الدخل', marital_status:'الحالة الاجتماعية', has_children:'لديه أبناء', governorate:'المحافظة', marital_home_location:'محافظة سكن الزوجية', religiosity_level:'مستوى التدين', smoker:'التدخين', prays_regularly:'المحافظة على الصلاة', exercises:'الرياضة', housing_type:'نوع السكن', about_me:'نبذة', partner_age_min:'أقل سن مناسب', partner_age_max:'أكبر سن مناسب', partner_marital_status_accepted:'الحالة الاجتماعية المقبولة', accepted_governorates:'المحافظات المقبولة', partner_education_preference:'تعليم الشريك', partner_work_preference:'عمل الشريك' };
+const display = { yes:'نعم', no:'لا', sometimes:'أحياناً', single:'أعزب/آنسة', married:'متزوج/ة', divorced:'مطلق/ة', widowed:'أرمل/ة', separated:'منفصل/ة', owned:'تمليك', fixed_rent:'إيجار مدة', open_rent:'إيجار مفتوح', family_house:'بيت عائلة', high:'عالي', medium:'متوسط', welloff:'ميسور', normal:'عادي', works:'يعمل', not_working:'لا يعمل', either:'لا يهم', hijab:'حجاب', niqab:'نقاب' };
+const escapeHtml = value => String(value ?? '').replace(/[&<>'"]/g, char => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[char]));
+let profileId;
+async function load() {
+  try {
+    const res = await fetch('/api/profiles/' + encodeURIComponent(id), { headers:{ Authorization:'Bearer ' + token } });
+    const data = await res.json(); if (!res.ok) throw new Error(data.error || 'تعذر تحميل البروفايل'); profileId = data.id;
+    const rows = Object.entries(labels).filter(([key]) => data[key] !== null && data[key] !== undefined && data[key] !== '').map(([key, label]) => `<div class="row"><strong>${label}</strong><br>${escapeHtml(display[data[key]] || data[key])}</div>`).join('');
+    document.getElementById('profile').innerHTML = `<h1>${data.gender === 'male' ? 'عريس' : 'عروس'} — ${data.age} سنة</h1>${rows}`;
+    document.getElementById('requestBtn').hidden = false;
+  } catch (err) { document.getElementById('profile').innerHTML = `<p class="error">${escapeHtml(err.message)}</p>`; }
+}
+document.getElementById('requestBtn').addEventListener('click', async () => { const msg = document.getElementById('msg'); try { const res = await fetch('/api/requests/' + profileId, { method:'POST', headers:{ 'Content-Type':'application/json', Authorization:'Bearer ' + token } }); const result = await res.json(); if (!res.ok) throw new Error(result.error); msg.textContent = result.message; msg.className='success'; } catch (err) { msg.textContent = err.message; msg.className='error'; } });
+load();
+</script>
+</body>
+</html>
