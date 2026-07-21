@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تسجيل الدخول</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>تسجيل الدخول</h1>
+    <form id="loginForm">
+      <label>رقم الهاتف
+        <input type="tel" name="phone" required>
+      </label>
+      <label>كلمة المرور
+        <input type="password" name="password" required>
+      </label>
+      <button type="submit">دخول</button>
+    </form>
+    <p id="msg"></p>
+    <p>مفيش حساب؟ <a href="register.html">اعمل حساب جديد</a></p>
+    <p><a href="browse.html">تصفح البروفايلات</a></p>
+  </div>
+
+<script>
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target).entries());
+  const msg = document.getElementById('msg');
+  msg.textContent = 'جاري الدخول...';
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (!res.ok) { msg.textContent = result.error; msg.className = 'error'; return; }
+    localStorage.setItem('token', result.token);
+    localStorage.setItem('gender', result.gender);
+    msg.className = 'success';
+    if (result.status === 'incomplete') {
+      msg.textContent = 'محتاج تكمّل استمارة البيانات...';
+      setTimeout(() => window.location.href = 'form.html', 1000);
+    } else if (result.status === 'pending') {
+      msg.textContent = 'حسابك قيد المراجعة من الإدارة حاليًا.';
+    } else if (result.status === 'approved') {
+      msg.textContent = 'تم الدخول بنجاح!';
+      setTimeout(() => window.location.href = 'browse.html', 1000);
+    } else {
+      msg.textContent = 'الحساب موقوف أو مرفوض، تواصل مع الإدارة.';
+      msg.className = 'error';
+    }
+  } catch (err) {
+    msg.textContent = 'حصل خطأ في الاتصال بالسيرفر';
+    msg.className = 'error';
+  }
+});
+</script>
+</body>
+</html>
