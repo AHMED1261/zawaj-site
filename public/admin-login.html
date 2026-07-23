@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>دخول المشرف</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>دخول المشرف</h1>
+    <form id="adminLoginForm">
+      <label>اسم المستخدم <input type="text" name="username" required></label>
+      <label>كلمة المرور <input type="password" name="password" required></label>
+      <button type="submit">دخول</button>
+    </form>
+    <p id="msg"></p>
+  </div>
+<script>
+document.getElementById('adminLoginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target).entries());
+  const msg = document.getElementById('msg');
+  try {
+    const csrfRes = await fetch('/api/csrf-token');
+    const csrfData = await csrfRes.json();
+    const csrfToken = csrfData.csrfToken;
+
+    const res = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'CSRF-Token': csrfToken },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (!res.ok) { msg.textContent = result.error; msg.className = 'error'; return; }
+    localStorage.setItem('adminToken', result.token);
+    window.location.href = 'admin.html';
+  } catch (err) {
+    msg.textContent = 'حصل خطأ في الاتصال بالسيرفر';
+    msg.className = 'error';
+  }
+});
+</script>
+</body>
+</html>

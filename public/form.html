@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>استمارة البيانات</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .container.wide { max-width: 700px; }
+  fieldset { border: 1px solid #eee; border-radius: 10px; margin-bottom: 20px; padding: 16px; }
+  legend { font-weight: 700; padding: 0 8px; color: #b08968; }
+  .hidden { display: none !important; }
+  .radio-group { display: flex; gap: 16px; flex-wrap: wrap; }
+  .radio-group label { flex-direction: row; align-items: center; gap: 6px; font-weight: 400; }
+  .radio-group input { width: auto; }
+</style>
+</head>
+<body>
+  <div class="container wide">
+    <h1>استمارة البيانات</h1>
+    <p style="text-align:center;color:#666;font-size:14px">كل الأسئلة إلزامية إلا لو ظهرت بناءً على إجابة سابقة. بياناتك هتترسل للمراجعة بعد الإرسال.</p>
+
+    <form id="profileForm">
+
+      <fieldset>
+        <legend>أولاً: المواصفات العامة</legend>
+        <label>كم عمرك؟ <input type="number" name="age" min="18" max="90" required></label>
+        <label>ما وزنك؟ (كجم) <input type="number" name="weight" min="30" max="250" required></label>
+        <label>ما طولك؟ (سم) <input type="number" name="height" min="120" max="230" required></label>
+        <label>ما لون بشرتك؟
+          <select name="skin_color" required>
+            <option value="">اختر</option>
+            <option value="فاتح">فاتح</option>
+            <option value="قمحي">قمحي</option>
+            <option value="أسمر">أسمر</option>
+            <option value="أبيض">أبيض</option>
+          </select>
+        </label>
+        <div data-show-if="gender_is:male">
+          <label>هل أنت ملتحٍ (تارك اللحية سنة عن النبي ﷺ)؟
+            <select name="has_beard"><option value="">اختر</option><option value="yes">نعم</option><option value="no">لا</option></select>
+          </label>
+        </div>
+        <label>هل تمارس الرياضة؟
+          <select name="exercises" required><option value="">اختر</option><option value="yes">نعم</option><option value="sometimes">أحيانًا</option><option value="no">لا</option></select>
+        </label>
+        <label>هل تعاني من أي أمراض أو إعاقات؟ <textarea name="health_issues" rows="2" required placeholder="اكتب التفاصيل أو 'لا يوجد'"></textarea></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>ثانياً: الوضع العلمي والوظيفي</legend>
+        <label>ما مؤهلك الدراسي؟
+          <select name="education" required>
+            <option value="">اختر</option>
+            <option value="أقل من الثانوية">أقل من الثانوية</option>
+            <option value="ثانوية عامة">ثانوية عامة</option>
+            <option value="دبلوم (متوسط)">دبلوم (متوسط)</option>
+            <option value="بكالوريوس/ليسانس (عالي)">بكالوريوس/ليسانس (عالي)</option>
+            <option value="دراسات عليا (ماجستير/دكتوراه)">دراسات عليا (ماجستير/دكتوراه)</option>
+          </select>
+        </label>
+        <label>ما عملك الحالي؟ <input type="text" name="job" required></label>
+        <label>ما نوع عملك؟
+          <select name="job_type" required>
+            <option value="">اختر</option>
+            <option value="government">حكومي</option>
+            <option value="private">خاص</option>
+            <option value="business_owner">صاحب عمل</option>
+          </select>
+        </label>
+        <label>ما مستوى دخلك؟
+          <select name="income_level" required>
+            <option value="">اختر</option>
+            <option value="normal">عادي</option>
+            <option value="medium">متوسط</option>
+            <option value="welloff">ميسور</option>
+            <option value="high">عالي</option>
+          </select>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>ثالثاً: الحالة الاجتماعية</legend>
+        <label>ما حالتك الاجتماعية؟
+          <select name="marital_status" id="marital_status" required>
+            <option value="">اختر</option>
+            <option value="single">أعزب</option>
+            <option value="married">متزوج</option>
+            <option value="divorced">مطلق</option>
+            <option value="widowed">أرمل</option>
+            <option value="separated">منفصل</option>
+          </select>
+        </label>
+
+        <label>هل لديك أولاد؟
+          <select name="has_children" id="has_children" required><option value="">اختر</option><option value="yes">نعم</option><option value="no">لا</option></select>
+        </label>
+        <div data-show-if="has_children_is:yes">
+          <label>كم عددهم؟ <input type="number" name="children_count" min="1" max="20"></label>
+          <label>ما أعمار الأولاد؟ <input type="text" name="children_ages" placeholder="مثلاً: 3، 7، 10"></label>
+          <label>من له الحضانة؟ <input type="text" name="custody" placeholder="الأم / الأب"></label>
+        </div>
+
+        <label>هل سبق لك الارتباط (خطوبة أو عقد زواج)؟
+          <select name="previously_engaged" id="previously_engaged" required><option value="">اختر</option><option value="yes">نعم</option><option value="no">لا</option></select>
+        </label>
+        <div data-show-if="previously_engaged_is:yes">
+          <label>وصف الارتباط السابق ومدته <textarea name="previously_engaged_details" rows="2" placeholder="كانت خطوبة/عقد، واستمرت قد إيه"></textarea></label>
+        </div>
+
+        <div data-show-if="marital_status_is:widowed">
+          <label>كم مضى على وفاة زوجتك/زوجك؟ <input type="text" name="widow_duration" placeholder="مثلاً: سنتين"></label>
+        </div>
+
+        <div data-show-if="marital_status_is:divorced">
+          <label>ما تاريخ آخر طلاق؟ <input type="date" name="last_divorce_date"></label>
+          <label>كم عدد مرات الطلاق السابقة؟ <input type="number" name="divorce_count" min="1" max="10"></label>
+        </div>
+
+        <div data-show-if="marital_status_is:married" id="polygamy_block">
+          <label>كم زوجة على ذمتك حاليًا؟ <input type="number" name="current_wives_count" min="1" max="4"></label>
+          <div data-show-if="gender_is:male">
+            <label>هل ترغب في التعدد؟ <select name="wants_polygamy"><option value="">اختر</option><option value="yes">نعم</option><option value="no">لا</option></select></label>
+            <label>هل التعدد بعلم الزوجة الأولى؟ <select name="polygamy_with_first_wife_knowledge"><option value="">اختر</option><option value="yes">نعم</option><option value="no">لا</option></select></label>
+          </div>
+        </div>
+
+        <label>هل لديك رغبة في الإنجاب؟
+          <select name="wants_more_children" required>
+            <option value="">اختر</option>
+            <option value="yes">نعم</option>
+            <option value="no">لا</option>
+            <option value="maybe">لسه مش قرر</option>
+          </select>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>رابعاً: بيانات الأسرة</legend>
+        <label>ما عمل الوالد؟ <input type="text" name="father_job" required></label>
+        <label>ما عمل الوالدة؟ <input type="text" name="mother_job" required></label>
+        <label>كم عدد الإخوة والأخوات؟ <input type="number" name="siblings_count" min="0" max="30" required></label>
+        <label>ما مستوى تعليمهم؟ <input type="text" name="siblings_education" required></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>خامساً: بيانات السكن</legend>
+        <label>في أي محافظة تقيم؟
+          <input type="text" name="governorate" list="governoratesList" autocomplete="off" required placeholder="اكتب واختار من القائمة">
+        </label>
+        <label>ما المنطقة التي تقيم بها؟ <input type="text" name="area" required></label>
+        <label>ما طبيعة المنطقة؟
+          <select name="area_type" required><option value="">اختر</option><option value="popular">شعبي</option><option value="medium">متوسط</option><option value="upscale">راقي</option></select>
+        </label>
+        <label>أين سيكون سكن الزوجية؟ (المحافظة)
+          <input type="text" name="marital_home_location" list="governoratesList" autocomplete="off" required placeholder="اكتب واختار من القائمة">
+        </label>
+        <label>في أي منطقة؟
+          <input type="text" name="marital_home_area" required placeholder="مثلاً المعادي">
+        </label>
+        <label>ما نوع السكن؟
+          <select name="housing_type" id="housing_type" required>
+            <option value="">اختر</option>
+            <option value="owned">تمليك</option>
+            <option value="fixed_rent">إيجار مدة</option>
+            <option value="open_rent">إيجار مفتوح</option>
+            <option value="family_house">بيت عيلة</option>
+          </select>
+        </label>
+        <div data-show-if="housing_type_is:family_house">
+          <label>هل ستكون الحياة منفصلة أم مع الأهل؟
+            <select name="family_house_living"><option value="">اختر</option><option value="separate">منفصلة</option><option value="with_family">مع الأهل</option></select>
+          </label>
+        </div>
+      </fieldset>
+
+      <fieldset>
+        <legend>سادساً: بيانات أخرى</legend>
+        <label>ما مستوى تدينك؟ <input type="text" name="religiosity_level" required></label>
+        <label>هل تحافظ على الصلوات؟ <select name="prays_regularly" required><option value="">اختر</option><option value="yes">نعم</option><option value="no">لا</option></select></label>
+        <label>هل أنت مدخن؟ <select name="smoker" required><option value="">اختر</option><option value="yes">نعم</option><option value="no">لا</option></select></label>
+        <label>كم تحفظ من القرآن الكريم؟ <input type="text" name="quran_memorization" required></label>
+        <label>هل تشاهد المسلسلات والأفلام؟ <select name="watches_series" required><option value="">اختر</option><option value="yes">نعم</option><option value="sometimes">أحيانًا</option><option value="no">لا</option></select></label>
+        <label>هل تسمع الأغاني؟ <select name="listens_music" required><option value="">اختر</option><option value="yes">نعم</option><option value="sometimes">أحيانًا</option><option value="no">لا</option></select></label>
+        <label>من هم الدعاة أو العلماء الذين تستمع إليهم أو تقرأ لهم؟ <textarea name="religious_scholars_followed" rows="2" required></textarea></label>
+        <label>هل درست علمًا شرعيًا أو تنوي دراسته؟
+          <select name="studied_sharia" required><option value="">اختر</option><option value="yes">نعم</option><option value="no">لا</option><option value="planning">أنوي ذلك</option></select>
+        </label>
+        <label>من الذي يملأ الاستمارة؟
+          <select name="form_filled_by" id="form_filled_by" required><option value="">اختر</option><option value="self">أنا بنفسي</option><option value="relative">أحد أقاربي</option></select>
+        </label>
+        <div data-show-if="form_filled_by_is:relative">
+          <label>ما صلة القرابة؟ <input type="text" name="relative_relation"></label>
+          <label>هل تم ملء الاستمارة بعلمك؟ <select name="filled_with_knowledge"><option value="">اختر</option><option value="yes">نعم</option><option value="no">لا</option></select></label>
+        </div>
+        <label>تكلم عن نفسك، أو ماذا يقول الناس عنك؟ <textarea name="about_me" rows="4" required></textarea></label>
+      </fieldset>
+
+      <fieldset>
+        <legend>سابعاً: مواصفات شريك الحياة المطلوب</legend>
+        <label>ما المواصفات العامة المطلوبة؟ <textarea name="partner_general_specs" rows="3" required></textarea></label>
+        <label>السن المناسب من <input type="number" name="partner_age_min" min="18" max="80" required> إلى <input type="number" name="partner_age_max" min="18" max="80" required></label>
+        <label>هل تشترط لون بشرة معين؟ <input type="text" name="partner_skin_color_preference" placeholder="أو اكتب 'لا يوجد'" required></label>
+        <label>ما الحالة الاجتماعية المقبولة؟ (اختار حاجة أو أكتر)</label>
+        <div class="radio-group" id="partner_marital_group">
+          <label><input type="checkbox" name="partner_marital_status_accepted[]" value="آنسة/أعزب"> آنسة / أعزب</label>
+          <label><input type="checkbox" name="partner_marital_status_accepted[]" value="مطلق/ة"> مطلق/ة</label>
+          <label><input type="checkbox" name="partner_marital_status_accepted[]" value="أرمل/ة"> أرمل/ة</label>
+        </div>
+        <div data-show-if="partner_marital_includes:divorced_or_widowed">
+          <label>هل توافق على شريك مطلق/أرمل معه أطفال؟
+            <select name="accepts_with_children"><option value="">اختر</option><option value="yes">نعم</option><option value="no">لا</option><option value="indifferent">لا يهم</option></select>
+          </label>
+          <label>هل توافق لو الحضانة عند الطرف الآخر (الأب مثلاً)؟
+            <select name="accepts_children_with_father_custody"><option value="">اختر</option><option value="yes">نعم</option><option value="no">لا</option><option value="indifferent">لا يهم</option></select>
+          </label>
+        </div>
+        <label>ما المحافظات التي تقبل الزواج منها؟ <input type="text" name="accepted_governorates" placeholder="اكتب المحافظات مفصولة بفاصلة" required></label>
+        <div data-show-if="gender_is:male">
+          <label>هل تفضل الحجاب أم النقاب أم كلاهما؟
+            <select name="hijab_preference" required><option value="">اختر</option><option value="hijab">حجاب</option><option value="niqab">نقاب</option><option value="either">كلاهما</option></select>
+          </label>
+        </div>
+        <label>ما المؤهل الدراسي المطلوب؟
+          <select name="partner_education_preference" required><option value="">اختر</option><option value="high">عالي</option><option value="medium">متوسط</option><option value="either">كلاهما</option></select>
+        </label>
+        <label>هل تفضل أن يعمل الشريك أم لا؟
+          <select name="partner_work_preference" required><option value="">اختر</option><option value="works">يعمل</option><option value="not_working">لا يعمل</option><option value="either">لا يهم</option></select>
+        </label>
+      </fieldset>
+
+      <fieldset>
+        <legend>أسئلة ختامية</legend>
+        <label>هل ترغب في نشر استمارتك على فيسبوك وتليجرام؟
+          <select name="wants_publish_social" required><option value="">اختر</option><option value="yes">نعم</option><option value="no">لا</option></select>
+        </label>
+        <label>هل سبق لك مراسلتنا من حساب آخر؟
+          <select name="contacted_before" required><option value="">اختر</option><option value="yes">نعم</option><option value="no">لا</option></select>
+        </label>
+        <label>هل لديك أي إضافة أو ملحوظة؟ <textarea name="notes" rows="2"></textarea></label>
+      </fieldset>
+
+      <button type="submit">إرسال الاستمارة للمراجعة</button>
+    </form>
+    <p id="msg"></p>
+  </div>
+
+  <datalist id="governoratesList">
+    <option value="القاهرة"><option value="الجيزة"><option value="الإسكندرية"><option value="الدقهلية">
+    <option value="البحر الأحمر"><option value="البحيرة"><option value="الفيوم"><option value="الغربية">
+    <option value="الإسماعيلية"><option value="المنوفية"><option value="المنيا"><option value="القليوبية">
+    <option value="الوادي الجديد"><option value="السويس"><option value="أسوان"><option value="أسيوط">
+    <option value="بني سويف"><option value="بورسعيد"><option value="دمياط"><option value="الشرقية">
+    <option value="جنوب سيناء"><option value="كفر الشيخ"><option value="مطروح"><option value="الأقصر">
+    <option value="قنا"><option value="شمال سيناء"><option value="سوهاج">
+  </datalist>
+
+<script>
+const token = localStorage.getItem('token');
+if (!token) window.location.href = 'login.html';
+
+let myGender = null;
+(async () => {
+  myGender = localStorage.getItem('gender');
+  applyConditions();
+
+  // جلب البيانات لو مسجلها قبل كده
+  try {
+    const res = await fetch('/api/user/profile', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (Object.keys(data).length > 0) {
+        Object.entries(data).forEach(([key, value]) => {
+          if (value === null || value === undefined) return;
+          const input = form.elements[key];
+          if (!input) return;
+
+          if (input.type === 'checkbox' || input.type === 'radio') {
+            // checkboxes list for partner_marital_status_accepted[]
+            if (input.length !== undefined) {
+               const values = value.split('، ');
+               Array.from(input).forEach(chk => {
+                 chk.checked = values.includes(chk.value);
+               });
+            } else {
+               input.checked = (input.value === value);
+            }
+          } else if (input.length !== undefined && input[0] && (input[0].type === 'checkbox' || input[0].type === 'radio')) {
+             const values = value.split('، ');
+             Array.from(input).forEach(chk => {
+               chk.checked = values.includes(chk.value);
+             });
+          } else {
+            input.value = value;
+          }
+        });
+        applyConditions();
+      }
+    }
+  } catch(err) {
+    console.error('Failed to load profile data', err);
+  }
+})();
+
+const form = document.getElementById('profileForm');
+
+function applyConditions() {
+  const maritalStatus = form.marital_status ? form.marital_status.value : '';
+  const hasChildren = form.has_children ? form.has_children.value : '';
+  const housingType = form.housing_type ? form.housing_type.value : '';
+  const formFilledBy = form.form_filled_by ? form.form_filled_by.value : '';
+  const previouslyEngaged = form.previously_engaged ? form.previously_engaged.value : '';
+  const partnerMaritalChecked = Array.from(document.querySelectorAll('input[name="partner_marital_status_accepted[]"]:checked')).map(i => i.value);
+  const includesDivorcedOrWidowed = partnerMaritalChecked.includes('مطلق/ة') || partnerMaritalChecked.includes('أرمل/ة');
+
+  document.querySelectorAll('[data-show-if]').forEach(el => {
+    const [key, val] = el.getAttribute('data-show-if').split(':');
+    let show = false;
+    if (key === 'marital_status_is') show = maritalStatus === val;
+    if (key === 'has_children_is') show = hasChildren === val;
+    if (key === 'housing_type_is') show = housingType === val;
+    if (key === 'form_filled_by_is') show = formFilledBy === val;
+    if (key === 'gender_is') show = myGender === val;
+    if (key === 'previously_engaged_is') show = previouslyEngaged === val;
+    if (key === 'partner_marital_includes') show = includesDivorcedOrWidowed;
+
+    el.classList.toggle('hidden', !show);
+    el.querySelectorAll('input, select, textarea').forEach(input => {
+      if (!show) { input.dataset.wasRequired = input.required ? '1' : ''; input.required = false; }
+      else if (input.dataset.wasRequired === '1') { input.required = true; }
+    });
+  });
+}
+
+form.addEventListener('change', applyConditions);
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(form).entries());
+  // تجميع اختيارات "الحالة الاجتماعية المقبولة" (checkbox متعدد) في قيمة واحدة
+  const partnerMaritalChecked = Array.from(document.querySelectorAll('input[name="partner_marital_status_accepted[]"]:checked')).map(i => i.value);
+  data.partner_marital_status_accepted = partnerMaritalChecked.join('، ');
+  delete data['partner_marital_status_accepted[]'];
+
+  const msg = document.getElementById('msg');
+  msg.textContent = 'جاري الإرسال...';
+  try {
+    const csrfRes = await fetch('/api/csrf-token');
+    const csrfData = await csrfRes.json();
+    const csrfToken = csrfData.csrfToken;
+
+    const res = await fetch('/api/profile/submit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'CSRF-Token': csrfToken },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (!res.ok) {
+      msg.textContent = result.error + (result.fields ? ': ' + result.fields.join(', ') : '');
+      msg.className = 'error';
+      return;
+    }
+    msg.textContent = result.message;
+    msg.className = 'success';
+  } catch (err) {
+    msg.textContent = 'حصل خطأ في الاتصال بالسيرفر';
+    msg.className = 'error';
+  }
+});
+</script>
+</body>
+</html>
