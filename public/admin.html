@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة المشرف</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .container.wide { max-width: 950px; }
+  .tabs { display:flex; gap:8px; margin-bottom:16px; }
+  .tabs button { flex:1; background:#eee; color:#333; }
+  .tabs button.active { background:#b08968; color:#fff; }
+  .userCard { border:1px solid #eee; border-radius:10px; padding:16px; margin-bottom:12px; background:#fafafa; }
+  .userCard h3 { margin:0 0 8px; }
+  .userCard .row { display:flex; gap:10px; margin-top:10px; flex-wrap:wrap; }
+  .userCard .row button { flex:1; min-width:100px; }
+  .approve { background:#27ae60; }
+  .reject { background:#c0392b; }
+  .edit { background:#2d6cdf; }
+  .save { background:#27ae60; }
+  .cancel { background:#999; }
+  .deleteBtn { background:#7a1f1f; }
+  details { margin-top:10px; font-size:13px; color:#555; }
+  .seedBox { background:#fff8f0; border:1px dashed #b08968; border-radius:10px; padding:16px; margin-bottom:20px; }
+  .detailsGrid { display:grid; grid-template-columns: 1fr 1fr; gap:8px 16px; margin-top:8px; }
+  .detailsGrid .field { display:flex; flex-direction:column; gap:2px; font-size:13px; }
+  .detailsGrid .field label { font-weight:600; color:#8a6a4a; }
+  .detailsGrid .field input, .detailsGrid .field textarea { font-size:13px; padding:4px 6px; border:1px solid #ddd; border-radius:5px; }
+  .detailsGrid .field span.readonly { color:#333; }
+</style>
+</head>
+<body>
+  <div class="container wide">
+    <h1>لوحة المشرف</h1>
+
+    <div class="seedBox">
+      <strong>بيانات تجريبية لاختبار الفلاتر</strong>
+      <p style="font-size:13px;color:#666">هيتم توليد بروفايلات وهمية معتمدة مباشرة لاختبار صفحة التصفح.</p>
+      <button id="seedBtn">توليد 200 بروفايل تجريبي</button>
+      <button id="deleteSeedBtn" style="background:#7a1f1f">حذف كل البيانات التجريبية</button>
+      <span id="seedMsg"></span>
+    </div>
+
+    <div class="tabs">
+      <button data-status="pending" class="active">قيد المراجعة</button>
+      <button data-status="pending_edits">تعديلات معلقة</button>
+      <button data-status="needs_revision">يحتاج لتعديل</button>
+      <button data-status="approved">معتمد</button>
+      <button data-status="rejected">مرفوض</button>
+    </div>
+
+    <div id="list"></div>
+  </div>
+
+<script>
+const token = localStorage.getItem('adminToken');
+if (!token) window.location.href = 'admin-login.html';
+
+let currentStatus = 'pending';
+
+const maritalLabels = { single:'أعزب', married:'متزوج', divorced:'مطلق', widowed:'أرمل', separated:'منفصل' };
+
+// خريطة أسماء الحقول بالعربي - نفس ترتيب الاستمارة
+const FIELD_LABELS = {
+  age:'السن', weight:'الوزن', height:'الطول', skin_color:'لون البشرة', has_beard:'ملتحٍ',
+  exercises:'يمارس الرياضة', health_issues:'أمراض/إعاقات',
+  education:'المؤهل الدراسي', job:'الوظيفة', job_type:'نوع الوظيفة', income_level:'مستوى الدخل',
+  marital_status:'الحالة الاجتماعية', has_children:'لديه أولاد', children_count:'عدد الأولاد',
+  children_ages:'أعمار الأولاد', custody:'الحضانة', previously_engaged:'سبق الارتباط',
+  previously_engaged_details:'تفاصيل الارتباط السابق', widow_duration:'مدة الترمل',
+  last_divorce_date:'تاريخ آخر طلاق', divorce_count:'عدد مرات الطلاق', current_wives_count:'عدد الزوجات الحاليات',
+  wants_polygamy:'يرغب في التعدد', polygamy_with_first_wife_knowledge:'التعدد بعلم الزوجة الأولى',
+  wants_more_children:'يرغب في الإنجاب', father_job:'عمل الوالد', mother_job:'عمل الوالدة',
+  siblings_count:'عدد الإخوة', siblings_education:'تعليم الإخوة',
+  governorate:'المحافظة', area:'المنطقة', area_type:'طبيعة المنطقة', marital_home_location:'مكان سكن الزوجية',
+  housing_type:'نوع السكن', family_house_living:'الحياة في بيت العيلة', marital_home_area:'منطقة سكن الزوجية',
+  religiosity_level:'مستوى التدين', prays_regularly:'محافظ على الصلاة', smoker:'مدخن',
+  quran_memorization:'حفظ القرآن', watches_series:'يشاهد مسلسلات', listens_music:'يسمع أغاني',
+  religious_scholars_followed:'الدعاة المتابَعون', studied_sharia:'دراسة شرعية',
+  form_filled_by:'مين ملأ الاستمارة', relative_relation:'صلة القرابة', filled_with_knowledge:'بعلم المتقدم',
+  about_me:'نبذة شخصية',
+  partner_general_specs:'مواصفات الشريك العامة', partner_age_min:'أقل سن للشريك', partner_age_max:'أكبر سن للشريك',
+  partner_skin_color_preference:'لون بشرة مفضل', partner_marital_status_accepted:'حالة اجتماعية مقبولة',
+  accepts_with_children:'يقبل شريك معه أطفال', accepts_children_with_father_custody:'يقبل حضانة الطرف الآخر',
+  accepted_governorates:'المحافظات التي يقبل الزواج منها',
+  hijab_preference:'تفضيل الحجاب', partner_education_preference:'مؤهل الشريك المفضل',
+  partner_work_preference:'تفضيل عمل الشريك',
+  wants_publish_social:'نشر على السوشيال ميديا', contacted_before:'راسل من قبل', notes:'ملاحظات إضافية'
+};
+
+function escapeHtml(text) {
+  if (text === null || text === undefined) return '';
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+async function loadUsers(status) {
+  currentStatus = status;
+  document.querySelectorAll('.tabs button').forEach(b => b.classList.toggle('active', b.dataset.status === status));
+  const res = await fetch('/api/admin/users?status=' + status, { headers: { 'Authorization': 'Bearer ' + token } });
+  if (res.status === 401 || res.status === 403) { window.location.href = 'admin-login.html'; return; }
+  const users = await res.json();
+  const list = document.getElementById('list');
+  list.innerHTML = '';
+  if (!users.length) { list.innerHTML = '<p>لا يوجد حسابات في هذه الحالة</p>'; return; }
+
+  users.forEach(u => {
+    const card = document.createElement('div');
+    card.className = 'userCard';
+    card.dataset.userId = u.id;
+
+    let pendingData = null;
+    if (u.pending_data) {
+      try { pendingData = typeof u.pending_data === 'string' ? JSON.parse(u.pending_data) : u.pending_data; } catch(e){}
+    }
+
+    const fieldsHtml = Object.entries(FIELD_LABELS).map(([key, label]) => {
+      let currentVal = (u[key] === null || u[key] === undefined || u[key] === '') ? '-' : escapeHtml(u[key]);
+      let pendingHtml = '';
+      if (pendingData && pendingData[key] !== undefined && pendingData[key] !== u[key]) {
+        pendingHtml = `<div style="color:#c0392b; font-weight:bold; margin-top:4px;">تعديل مقترح: ${escapeHtml(pendingData[key]) || '-'}</div>`;
+      }
+      return `
+      <div class="field">
+        <label>${label}</label>
+        <span class="readonly" data-key="${key}">${currentVal}</span>
+        ${pendingHtml}
+      </div>
+      `;
+    }).join('');
+
+    card.innerHTML = `
+      <h3>${u.gender === 'male' ? 'عريس' : 'عروس'} - ${escapeHtml(u.phone)}</h3>
+      <p>السن: ${escapeHtml(u.age) || '-'} | المحافظة: ${escapeHtml(u.governorate) || '-'} | الحالة: ${maritalLabels[u.marital_status] || '-'}</p>
+      <p>الوظيفة: ${escapeHtml(u.job) || '-'} | المؤهل: ${escapeHtml(u.education) || '-'}</p>
+      <details>
+        <summary>عرض/تعديل كل التفاصيل</summary>
+        <div class="detailsGrid" data-fields>${fieldsHtml}</div>
+        <div class="row">
+          <button class="edit" data-action="edit">تعديل البيانات</button>
+          <button class="deleteBtn" data-action="delete">حذف الحساب نهائيًا</button>
+        </div>
+      </details>
+      ${currentStatus === 'pending' ? `
+      <div class="row">
+        <button class="approve" data-action="approve" data-id="${u.id}">اعتماد</button>
+        <button class="reject" data-action="reject" data-id="${u.id}">رفض</button>
+        <button style="background:#e67e22;" data-action="revise" data-id="${u.id}">طلب تعديل</button>
+      </div>` : ''}
+      ${currentStatus === 'pending_edits' ? `
+      <div class="row">
+        <button class="approve" data-action="approve-edit" data-id="${u.id}">قبول التعديلات</button>
+        <button class="reject" data-action="reject-edit" data-id="${u.id}">رفض التعديلات</button>
+      </div>` : ''}
+    `;
+    list.appendChild(card);
+  });
+
+  attachHandlers();
+}
+
+function attachHandlers() {
+  document.querySelectorAll('.tabs button').forEach(b => {
+    b.onclick = () => loadUsers(b.dataset.status);
+  });
+
+  document.querySelectorAll('.userCard').forEach(card => {
+    const id = card.dataset.userId;
+
+    card.querySelector('[data-action="approve"]')?.addEventListener('click', () => approveReject(id, 'approve'));
+    card.querySelector('[data-action="reject"]')?.addEventListener('click', () => approveReject(id, 'reject'));
+    card.querySelector('[data-action="revise"]')?.addEventListener('click', () => approveReject(id, 'revise'));
+    card.querySelector('[data-action="approve-edit"]')?.addEventListener('click', () => approveRejectEdit(id, 'approve-edit'));
+    card.querySelector('[data-action="reject-edit"]')?.addEventListener('click', () => approveRejectEdit(id, 'reject-edit'));
+
+    card.querySelector('[data-action="delete"]').addEventListener('click', async () => {
+      if (!confirm('متأكد إنك عايز تحذف الحساب ده نهائيًا؟ الإجراء ده مش قابل للتراجع.')) return;
+      await fetch(`/api/admin/users/${id}`, { method: 'DELETE', headers: { 'Authorization': 'Bearer ' + token, 'CSRF-Token': csrfToken } });
+      loadUsers(currentStatus);
+    });
+
+    card.querySelector('[data-action="edit"]').addEventListener('click', () => enterEditMode(card, id));
+  });
+}
+
+let csrfToken = '';
+async function loadCsrfToken() {
+  try {
+    const res = await fetch('/api/csrf-token');
+    const data = await res.json();
+    csrfToken = data.csrfToken;
+  } catch (err) {
+    console.error('Failed to load CSRF token');
+  }
+}
+loadCsrfToken();
+
+async function approveReject(id, action) {
+  let body = {};
+  if (action === 'reject' || action === 'revise') {
+    const reason = prompt('السبب (اختياري، سيظهر للمستخدم):') || '';
+    body = { reason };
+  }
+  try {
+    const res = await fetch(`/api/admin/users/${id}/${action}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'CSRF-Token': csrfToken },
+      body: JSON.stringify(body)
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(result.error || 'تعذر تنفيذ الإجراء، حاول مرة أخرى.');
+      return;
+    }
+    loadUsers(currentStatus);
+  } catch (err) {
+    alert('تعذر الاتصال بالسيرفر، حاول مرة أخرى.');
+  }
+}
+
+async function approveRejectEdit(id, action) {
+  try {
+    const res = await fetch(`/api/admin/users/${id}/${action}`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'CSRF-Token': csrfToken }
+    });
+    const result = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(result.error || 'تعذر تنفيذ الإجراء، حاول مرة أخرى.');
+      return;
+    }
+    loadUsers(currentStatus);
+  } catch (err) {
+    alert('تعذر الاتصال بالسيرفر، حاول مرة أخرى.');
+  }
+}
+
+function enterEditMode(card, id) {
+  const grid = card.querySelector('[data-fields]');
+  grid.querySelectorAll('.field').forEach(fieldDiv => {
+    const span = fieldDiv.querySelector('span[data-key]');
+    const key = span.dataset.key;
+    const currentValue = span.textContent === '-' ? '' : span.textContent;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.value = currentValue;
+    input.dataset.key = key;
+    span.replaceWith(input);
+  });
+
+  const editBtn = card.querySelector('[data-action="edit"]');
+  editBtn.textContent = 'حفظ التعديلات';
+  editBtn.classList.remove('edit');
+  editBtn.classList.add('save');
+  editBtn.onclick = () => saveEdits(card, id);
+
+  if (!card.querySelector('[data-action="cancelEdit"]')) {
+    const cancelBtn = document.createElement('button');
+    cancelBtn.textContent = 'إلغاء';
+    cancelBtn.className = 'cancel';
+    cancelBtn.dataset.action = 'cancelEdit';
+    cancelBtn.onclick = () => loadUsers(currentStatus);
+    editBtn.insertAdjacentElement('afterend', cancelBtn);
+  }
+}
+
+async function saveEdits(card, id) {
+  const grid = card.querySelector('[data-fields]');
+  const updates = {};
+  grid.querySelectorAll('input[data-key]').forEach(input => {
+    updates[input.dataset.key] = input.value;
+  });
+  await fetch(`/api/admin/users/${id}/profile`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'CSRF-Token': csrfToken },
+    body: JSON.stringify(updates)
+  });
+  loadUsers(currentStatus);
+}
+
+document.querySelectorAll('.tabs button').forEach(b => {
+  b.addEventListener('click', () => loadUsers(b.dataset.status));
+});
+
+document.getElementById('seedBtn').addEventListener('click', async () => {
+  const seedMsg = document.getElementById('seedMsg');
+  const seedBtn = document.getElementById('seedBtn');
+  seedBtn.disabled = true;
+  seedMsg.textContent = ' جاري التوليد... (ممكن ياخد دقيقة)';
+  try {
+    const res = await fetch('/api/admin/seed-test-data', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'CSRF-Token': csrfToken },
+      body: JSON.stringify({ count: 200 })
+    });
+    const result = await res.json().catch(() => ({}));
+    seedMsg.textContent = ' ' + (result.message || result.error || 'تعذر توليد البيانات التجريبية.');
+  } catch (err) {
+    seedMsg.textContent = ' تعذر الاتصال بالسيرفر أثناء التوليد.';
+  } finally {
+    seedBtn.disabled = false;
+  }
+});
+
+document.getElementById('deleteSeedBtn').addEventListener('click', async () => {
+  if (!confirm('هيتحذف كل البيانات التجريبية اللي اتولدت. متأكد؟')) return;
+  const seedMsg = document.getElementById('seedMsg');
+  seedMsg.textContent = ' جاري الحذف...';
+  const res = await fetch('/api/admin/test-data', {
+    method: 'DELETE',
+    headers: { 'Authorization': 'Bearer ' + token, 'CSRF-Token': csrfToken }
+  });
+  const result = await res.json();
+  seedMsg.textContent = ' ' + (result.message || result.error);
+  loadUsers(currentStatus);
+});
+
+loadUsers('pending');
+</script>
+</body>
+</html>
