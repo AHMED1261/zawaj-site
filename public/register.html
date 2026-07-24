@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>إنشاء حساب</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://accounts.google.com/gsi/client?onload=onGoogleLibraryLoad" async defer></script>
+</head>
+<body>
+  <div class="container">
+    <h1>إنشاء حساب جديد</h1>
+    <form id="registerForm">
+      <label>رقم الهاتف
+        <input type="tel" name="phone" placeholder="01xxxxxxxxx" required>
+      </label>
+      <label>كلمة المرور
+        <input type="password" name="password" minlength="6" title="يجب أن تحتوي على الأقل 6 أحرف" required>
+      </label>
+      <label>النوع
+        <select name="gender" required>
+          <option value="">اختر</option>
+          <option value="male">عريس</option>
+          <option value="female">عروس</option>
+        </select>
+      </label>
+      <button type="submit">إنشاء الحساب</button>
+    </form>
+    
+    <div id="google-separator" style="margin: 20px 0; text-align: center; display: none;">أو باستخدام جوجل</div>
+    <div id="google-gender-section" style="text-align: right; margin-bottom: 10px; display: none;">
+       <label style="color: red; font-weight: bold;">لتسجيل حساب بجوجل، اختر النوع أولاً ثم اضغط على الزر مرة أخرى:</label>
+       <select id="google-gender-select" style="width: 100%; padding: 10px; margin-top: 5px;">
+         <option value="">اختر النوع</option>
+         <option value="male">عريس</option>
+         <option value="female">عروس</option>
+       </select>
+    </div>
+
+    <div id="google-btn-container" style="display: flex; justify-content: center;"></div>
+
+    <p id="msg"></p>
+    <p>عندك حساب؟ <a href="login.html">سجّل دخول</a></p>
+  </div>
+
+<script>
+let googleClientId = '';
+let googleLoaded = false;
+
+window.onGoogleLibraryLoad = () => {
+  googleLoaded = true;
+  initGoogleButton();
+};
+
+window.onload = async () => {
+  try {
+    const res = await fetch('/api/config');
+    const config = await res.json();
+    googleClientId = config.googleClientId;
+    initGoogleButton();
+  } catch (err) {
+    console.error('Failed to load Google config');
+  }
+};
+
+function initGoogleButton() {
+  if (googleLoaded && googleClientId) {
+    document.getElementById('google-separator').style.display = 'block';
+    google.accounts.id.initialize({
+      client_id: googleClientId,
+      callback: handleCredentialResponse
+    });
+    google.accounts.id.renderButton(
+      document.getElementById('google-btn-container'),
+      { theme: 'outline', size: 'large', text: 'signup_with' }
+    );
+  }
+}
+
+async function handleCredentialResponse(response) {
+  const msg = document.getElementById('msg');
+  const genderSelect = document.getElementById('google-gender-select');
+  const genderSection = document.getElementById('google-gender-section');
+  
+  const selectedGender = genderSelect.value;
+  
+  msg.textContent = 'جاري الإرسال بحساب جوجل...';
+  msg.className = '';
+  
+  try {
+    const csrfRes = await fetch('/api/csrf-token');
+    const csrfData = await csrfRes.json();
+    
+    const res = await fetch('/api/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'CSRF-Token': csrfData.csrfToken },
+      body: JSON.stringify({ token: response.credential, gender: selectedGender || undefined })
+    });
+    const result = await res.json();
+    
+    if (!res.ok) {
+      if (result.error === 'needs_gender') {
+        genderSection.style.display = 'block';
+        msg.textContent = 'من فضلك اختر النوع من القائمة بالأعلى ثم اضغط على الزر مرة أخرى.';
+        msg.className = 'error';
+        return;
+      }
+      msg.textContent = result.error;
+      msg.className = 'error';
+      return;
+    }
+    
+    localStorage.setItem('token', result.token);
+    localStorage.setItem('gender', selectedGender || result.gender);
+    msg.textContent = 'تم الدخول بنجاح! هنحولك للوحة التحكم...';
+    msg.className = 'success';
+    setTimeout(() => window.location.href = 'dashboard.html', 1200);
+  } catch (err) {
+    msg.textContent = 'حصل خطأ في الاتصال بالسيرفر';
+    msg.className = 'error';
+  }
+}
+
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target).entries());
+  const msg = document.getElementById('msg');
+  msg.textContent = 'جاري الإرسال...';
+  try {
+    const csrfRes = await fetch('/api/csrf-token');
+    const csrfData = await csrfRes.json();
+    const csrfToken = csrfData.csrfToken;
+
+    const res = await fetch('/api/register', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'CSRF-Token': csrfToken },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (!res.ok) { msg.textContent = result.error; msg.className = 'error'; return; }
+    localStorage.setItem('token', result.token);
+    localStorage.setItem('gender', data.gender);
+    msg.textContent = 'تم إنشاء الحساب! هنحولك للوحة التحكم...';
+    msg.className = 'success';
+    setTimeout(() => window.location.href = 'dashboard.html', 1200);
+  } catch (err) {
+    msg.textContent = 'حصل خطأ في الاتصال بالسيرفر';
+    msg.className = 'error';
+  }
+});
+</script>
+</body>
+</html>

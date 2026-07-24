@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تسجيل الدخول</title>
+<link rel="stylesheet" href="style.css">
+<script src="https://accounts.google.com/gsi/client?onload=onGoogleLibraryLoad" async defer></script>
+</head>
+<body>
+  <div class="container">
+    <h1>تسجيل الدخول</h1>
+    <form id="loginForm">
+      <label>رقم الهاتف
+        <input type="tel" name="phone" required>
+      </label>
+      <label>كلمة المرور
+        <input type="password" name="password" required>
+      </label>
+      <button type="submit">دخول</button>
+    </form>
+    
+    <div id="google-separator" style="margin: 20px 0; text-align: center; display: none;">أو</div>
+    <div id="google-btn-container" style="display: flex; justify-content: center;"></div>
+    
+    <p id="msg"></p>
+    <p>مفيش حساب؟ <a href="register.html">اعمل حساب جديد</a></p>
+    <p><a href="browse.html">تصفح البروفايلات</a></p>
+  </div>
+
+<script>
+let googleClientId = '';
+let googleLoaded = false;
+
+window.onGoogleLibraryLoad = () => {
+  googleLoaded = true;
+  initGoogleButton();
+};
+
+window.onload = async () => {
+  try {
+    const res = await fetch('/api/config');
+    const config = await res.json();
+    googleClientId = config.googleClientId;
+    initGoogleButton();
+  } catch (err) {
+    console.error('Failed to load Google config');
+  }
+};
+
+function initGoogleButton() {
+  if (googleLoaded && googleClientId) {
+    document.getElementById('google-separator').style.display = 'block';
+    google.accounts.id.initialize({
+      client_id: googleClientId,
+      callback: handleCredentialResponse
+    });
+    google.accounts.id.renderButton(
+      document.getElementById('google-btn-container'),
+      { theme: 'outline', size: 'large' }
+    );
+  }
+}
+
+async function handleCredentialResponse(response) {
+  const msg = document.getElementById('msg');
+  msg.textContent = 'جاري الدخول بحساب جوجل...';
+  msg.className = '';
+  
+  try {
+    const csrfRes = await fetch('/api/csrf-token');
+    const csrfData = await csrfRes.json();
+    
+    const res = await fetch('/api/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'CSRF-Token': csrfData.csrfToken },
+      body: JSON.stringify({ token: response.credential })
+    });
+    const result = await res.json();
+    
+    if (!res.ok) {
+      if (result.error === 'needs_gender') {
+        msg.textContent = 'عشان تسجل لأول مرة، استخدم صفحة التسجيل عشان تختار النوع.';
+        msg.className = 'error';
+        setTimeout(() => window.location.href = 'register.html', 3000);
+        return;
+      }
+      msg.textContent = result.error;
+      msg.className = 'error';
+      return;
+    }
+    
+    localStorage.setItem('token', result.token);
+    localStorage.setItem('gender', result.gender);
+    msg.className = 'success';
+    msg.textContent = 'تم الدخول بنجاح، جاري تحويلك للوحة التحكم...';
+    setTimeout(() => window.location.href = 'dashboard.html', 1000);
+  } catch (err) {
+    msg.textContent = 'حصل خطأ في الاتصال بالسيرفر';
+    msg.className = 'error';
+  }
+}
+
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const data = Object.fromEntries(new FormData(e.target).entries());
+  const msg = document.getElementById('msg');
+  msg.textContent = 'جاري الدخول...';
+  try {
+    const csrfRes = await fetch('/api/csrf-token');
+    const csrfData = await csrfRes.json();
+    const csrfToken = csrfData.csrfToken;
+
+    const res = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'CSRF-Token': csrfToken },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (!res.ok) { msg.textContent = result.error; msg.className = 'error'; return; }
+    localStorage.setItem('token', result.token);
+    localStorage.setItem('gender', result.gender);
+    msg.className = 'success';
+    msg.textContent = 'تم الدخول بنجاح، جاري تحويلك للوحة التحكم...';
+    setTimeout(() => window.location.href = 'dashboard.html', 1000);
+  } catch (err) {
+    msg.textContent = 'حصل خطأ في الاتصال بالسيرفر';
+    msg.className = 'error';
+  }
+});
+</script>
+</body>
+</html>
