@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>تصفح البروفايلات</title>
+<link rel="stylesheet" href="style.css">
+<style>
+  .container.wide { max-width: 1100px; }
+  .filters { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+  .checkbox-box { border:1px solid #ddd; border-radius:8px; padding:10px; max-height:140px; overflow-y:auto; background:#fff; }
+  .checkbox-box label { flex-direction:row; align-items:center; gap:6px; font-weight:400; font-size:13px; margin-bottom:4px; }
+  .checkbox-box input { width:auto; }
+  details.filterGroup { border:1px solid #eee; border-radius:8px; padding:8px 10px; background:#fff; }
+  details.filterGroup summary { cursor:pointer; font-weight:600; font-size:14px; }
+  .hidden { display:none !important; }
+  .range-row { display:flex; gap:8px; }
+  .range-row input { width:100%; }
+</style>
+</head>
+<body>
+  <div class="container wide">
+    <h1>تصفح البروفايلات المعتمدة</h1>
+    
+    <div style="display: flex; gap: 10px; margin-bottom: 20px; flex-wrap: wrap;">
+      <select id="sortSelect" style="padding: 10px; border-radius: 5px; border: 1px solid #ccc;">
+        <option value="newest">الأحدث أولاً</option>
+        <option value="oldest">الأقدم أولاً</option>
+        <option value="youngest">الأصغر سناً</option>
+        <option value="oldest_age">الأكبر سناً</option>
+      </select>
+    </div>
+
+    <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px;">
+      
+      <details class="filterGroup" open>
+        <summary>المواصفات الأساسية</summary>
+        <div class="filters" style="padding-top:10px;">
+          <label>النوع
+            <select id="f_gender">
+              <option value="">الكل</option>
+              <option value="male">عريس</option>
+              <option value="female">عروس</option>
+            </select>
+          </label>
+          <label>السن
+            <div class="range-row">
+              <input type="number" id="f_minAge" placeholder="من">
+              <input type="number" id="f_maxAge" placeholder="لحد">
+            </div>
+          </label>
+          <div style="grid-column: span 2;">
+            <label>الحالة الاجتماعية (اختيار متعدد)</label>
+            <div class="checkbox-box" id="maritalStatusCheckboxes"></div>
+          </div>
+          <label>عايز يخلف؟
+            <select id="f_wantsChildren">
+              <option value="">الكل</option>
+              <option value="yes">نعم</option>
+              <option value="no">لا</option>
+              <option value="maybe">لسه مقررش</option>
+            </select>
+          </label>
+        </div>
+      </details>
+
+      <details class="filterGroup">
+        <summary>المواصفات الجسدية</summary>
+        <div class="filters" style="padding-top:10px;">
+          <label>الطول (سم)
+            <div class="range-row">
+              <input type="number" id="f_minHeight" placeholder="من">
+              <input type="number" id="f_maxHeight" placeholder="لحد">
+            </div>
+          </label>
+          <label>الوزن (كجم)
+            <div class="range-row">
+              <input type="number" id="f_minWeight" placeholder="من">
+              <input type="number" id="f_maxWeight" placeholder="لحد">
+            </div>
+          </label>
+        </div>
+      </details>
+
+      <details class="filterGroup">
+        <summary>الموقع والسكن</summary>
+        <div class="filters" style="padding-top:10px;">
+          <div style="grid-column: span 2;">
+            <label>المحافظة (اختيار متعدد)</label>
+            <div class="checkbox-box" id="governorateCheckboxes"></div>
+          </div>
+          <div style="grid-column: span 2;">
+            <label>أين سيكون سكن الزوجية؟ (اختيار متعدد)</label>
+            <div class="checkbox-box" id="maritalHomeCheckboxes"></div>
+          </div>
+          <label>نوع السكن
+            <select id="f_housingType">
+              <option value="">الكل</option>
+              <option value="owned">تمليك</option>
+              <option value="fixed_rent">إيجار مدة</option>
+              <option value="open_rent">إيجار مفتوح</option>
+              <option value="family_house">بيت عيلة</option>
+            </select>
+          </label>
+          <label>طبيعة المنطقة
+            <select id="f_areaType"><option value="">الكل</option><option value="popular">شعبي</option><option value="medium">متوسط</option><option value="upscale">راقي</option></select>
+          </label>
+        </div>
+      </details>
+
+      <details class="filterGroup">
+        <summary>التعليم والعمل</summary>
+        <div class="filters" style="padding-top:10px;">
+          <div style="grid-column: span 2;">
+            <label>المؤهل الدراسي (اختيار متعدد)</label>
+            <div class="checkbox-box" id="educationCheckboxes"></div>
+          </div>
+          <div style="grid-column: span 2;">
+            <label>نوع الوظيفة (اختيار متعدد)</label>
+            <div class="checkbox-box" id="jobTypeCheckboxes"></div>
+          </div>
+          <label>مستوى الدخل
+            <select id="f_incomeLevel">
+              <option value="">الكل</option>
+              <option value="normal">عادي</option>
+              <option value="medium">متوسط</option>
+              <option value="welloff">ميسور</option>
+              <option value="high">عالي</option>
+            </select>
+          </label>
+        </div>
+      </details>
+
+      <details class="filterGroup">
+        <summary>الحالة الدينية والرياضية</summary>
+        <div class="filters" style="padding-top:10px;">
+          <label>محافظ على الصلاة؟
+            <select id="f_praysRegularly"><option value="">الكل</option><option value="yes">نعم</option><option value="no">لا</option></select>
+          </label>
+          <label>مدخن؟
+            <select id="f_smoker"><option value="">الكل</option><option value="yes">نعم</option><option value="no">لا</option></select>
+          </label>
+          <label>يمارس الرياضة؟
+            <select id="f_exercises"><option value="">الكل</option><option value="yes">نعم</option><option value="sometimes">أحيانًا</option><option value="no">لا</option></select>
+          </label>
+          <div id="maleOnlyFilters" class="hidden">
+            <label>ملتحٍ؟
+              <select id="f_hasBeard"><option value="">الكل</option><option value="yes">نعم</option><option value="no">لا</option></select>
+            </label>
+            <label>عايز يعدد؟
+              <select id="f_wantsPolygamy"><option value="">الكل</option><option value="yes">نعم</option><option value="no">لا</option></select>
+            </label>
+          </div>
+        </div>
+      </details>
+    </div>
+
+    <button id="applyFilters" style="width:100%;margin-bottom:20px">فلترة</button>
+
+    <div id="results" class="grid"></div>
+    <div id="pagination" class="pagination"></div>
+  </div>
+
+  <div id="profileModal" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index:1000; overflow-y:auto;">
+    <div style="background:#fff; margin:50px auto; padding:20px; width:90%; max-width:500px; border-radius:10px; position:relative; box-shadow:0 4px 6px rgba(0,0,0,0.1);">
+      <span onclick="document.getElementById('profileModal').style.display='none'" style="position:absolute; top:10px; right:15px; font-size:24px; cursor:pointer; color:#777;">&times;</span>
+      <h2 id="modalTitle" style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px;"></h2>
+      <div id="modalBody" style="margin-top:15px; line-height:1.8; color:#444;"></div>
+      <div id="modalAction" style="margin-top:20px;"></div>
+    </div>
+  </div>
+
+<script>
+const token = localStorage.getItem('token');
+if (token) {
+  fetch('/api/user/dashboard', { headers: { 'Authorization': 'Bearer ' + token } })
+    .then(res => {
+      if (res.ok) return res.json();
+      throw new Error('Not logged in');
+    })
+    .then(data => {
+      if (data.profile && data.profile.status !== 'approved') {
+        alert('ميزة تصفح البروفايلات غير متاحة حتى يكتمل ملفك ويتم اعتماده.');
+        window.location.href = 'dashboard.html';
+      }
+    })
+    .catch(() => {});
+}
+
+const GOVERNORATES = ['القاهرة','الجيزة','الإسكندرية','الدقهلية','البحر الأحمر','البحيرة','الفيوم','الغربية','الإسماعيلية','المنوفية','المنيا','القليوبية','الوادي الجديد','السويس','أسوان','أسيوط','بني سويف','بورسعيد','دمياط','الشرقية','جنوب سيناء','كفر الشيخ','مطروح','الأقصر','قنا','شمال سيناء','سوهاج'];
+const MARITAL_STATUSES = [['single','أعزب'],['married','متزوج'],['divorced','مطلق'],['widowed','أرمل'],['separated','منفصل']];
+const EDUCATIONS = ['أقل من الثانوية','ثانوية عامة','دبلوم (متوسط)','بكالوريوس/ليسانس (عالي)','دراسات عليا (ماجستير/دكتوراه)'];
+
+const JOB_TYPES = [
+  {val: 'government', label: 'حكومي'},
+  {val: 'private', label: 'خاص'},
+  {val: 'business_owner', label: 'صاحب عمل'}
+];
+
+function buildCheckboxes(containerId, dataArray, isObj) {
+  const container = document.getElementById(containerId);
+  if(!container) return;
+  dataArray.forEach(item => {
+    const val = isObj ? item.val : item;
+    const label = isObj ? item.label : item;
+    const div = document.createElement('label');
+    div.innerHTML = `<input type="checkbox" value="${val}" onchange="loadProfiles(1)"> ${label}`;
+    container.appendChild(div);
+  });
+}
+buildCheckboxes('governorateCheckboxes', GOVERNORATES, false);
+buildCheckboxes('maritalHomeCheckboxes', GOVERNORATES, false);
+buildCheckboxes('maritalStatusCheckboxes', MARITAL_STATUSES, true);
+buildCheckboxes('educationCheckboxes', EDUCATIONS, false);
+buildCheckboxes('jobTypeCheckboxes', JOB_TYPES, true);
+
+function getChecked(containerId) {
+  const container = document.getElementById(containerId);
+  if(!container) return [];
+  return Array.from(container.querySelectorAll(`input:checked`)).map(i => i.value);
+}
+
+document.getElementById('f_gender').addEventListener('change', (e) => {
+  document.getElementById('maleOnlyFilters').classList.toggle('hidden', e.target.value !== 'male');
+});
+
+document.getElementById('sortSelect').addEventListener('change', () => {
+  loadProfiles(1);
+});
+
+async function loadProfiles(page = 1) {
+  const params = new URLSearchParams();
+  const singleFilters = {
+    gender: 'f_gender', minAge: 'f_minAge', maxAge: 'f_maxAge',
+    minHeight: 'f_minHeight', maxHeight: 'f_maxHeight', minWeight: 'f_minWeight', maxWeight: 'f_maxWeight',
+    incomeLevel: 'f_incomeLevel', wantsChildren: 'f_wantsChildren',
+    smoker: 'f_smoker', praysRegularly: 'f_praysRegularly', exercises: 'f_exercises',
+    housingType: 'f_housingType', areaType: 'f_areaType',
+    hasBeard: 'f_hasBeard', wantsPolygamy: 'f_wantsPolygamy'
+  };
+  Object.entries(singleFilters).forEach(([key, id]) => {
+    const val = document.getElementById(id).value;
+    if (val) params.set(key, val);
+  });
+
+  getChecked('governorateCheckboxes').forEach(v => params.append('governorate', v));
+  getChecked('maritalHomeCheckboxes').forEach(v => params.append('maritalHomeLocation', v));
+  getChecked('maritalStatusCheckboxes').forEach(v => params.append('maritalStatus', v));
+  getChecked('educationCheckboxes').forEach(v => params.append('education', v));
+  getChecked('jobTypeCheckboxes').forEach(v => params.append('jobType', v));
+
+  params.set('page', page);
+  params.set('limit', 12);
+  
+  const sortVal = document.getElementById('sortSelect').value;
+  if (sortVal) params.set('sort', sortVal);
+
+  const resultsBox = document.getElementById('results');
+  resultsBox.innerHTML = '<p>جاري التحميل...</p>';
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 ثانية أقصى انتظار
+  try {
+    const token = localStorage.getItem('token');
+    const headers = {};
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+
+    const res = await fetch('/api/profiles?' + params.toString(), {
+      signal: controller.signal,
+      headers: headers
+    });
+    clearTimeout(timeoutId);
+    
+    
+    const result = await res.json();
+    if (!res.ok || !result.data) {
+      resultsBox.innerHTML = `<p style="color:#c0392b">حصل خطأ في تحميل البيانات: ${result.error || 'خطأ غير معروف'}${result.detail ? ' (' + result.detail + ')' : ''}. جرّب تحدّث الصفحة.</p>`;
+      document.getElementById('pagination').innerHTML = '';
+      return;
+    }
+    renderResults(result);
+  } catch (err) {
+    clearTimeout(timeoutId);
+    const msg = err.name === 'AbortError' ? 'السيرفر بياخد وقت طويل في الرد. جرّب تاني بعد شوية.' : 'تعذر الاتصال بالسيرفر. جرّب تحدّث الصفحة بعد شوية.';
+    resultsBox.innerHTML = `<p style="color:#c0392b">${msg}</p>`;
+    document.getElementById('pagination').innerHTML = '';
+  }
+}
+
+const maritalLabels = { single:'أعزب', married:'متزوج', divorced:'مطلق', widowed:'أرمل', separated:'منفصل' };
+const childrenLabels = { yes:'عايز يخلف', no:'مش عايز يخلف', maybe:'لسه مقررش' };
+
+function escapeHtml(text) {
+  if (text === null || text === undefined) return '';
+  return String(text)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
+
+function renderResults(result) {
+  const container = document.getElementById('results');
+  container.innerHTML = '';
+  if (!result.data.length) { container.innerHTML = '<p>لا توجد نتائج مطابقة.</p>'; return; }
+  const isLoggedIn = !!localStorage.getItem('token');
+  
+  result.data.forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    
+    let actionButtonHtml = '';
+    if (isLoggedIn) {
+      actionButtonHtml = `<button class="send-req-btn" data-id="${p.user_id}" style="margin-top: 10px; background: #b08968; width: 100%;">إرسال طلب زواج</button>`;
+    } else {
+      actionButtonHtml = `<button class="login-to-send-btn" style="margin-top: 10px; background: #e67e22; width: 100%;">سجل الدخول لإرسال طلب زواج</button>`;
+    }
+    
+    card.innerHTML = `
+      <h3>${p.gender === 'male' ? 'عريس' : 'عروس'} - ${escapeHtml(p.age)} سنة</h3>
+      <p>${escapeHtml(p.governorate) || ''}</p>
+      <p>${maritalLabels[p.marital_status] || ''} · ${childrenLabels[p.wants_more_children] || ''}</p>
+      <p>${escapeHtml(p.education) || ''} - ${escapeHtml(p.job) || ''}</p>
+      <p>سكن الزوجية: ${escapeHtml(p.marital_home_location) || '-'}${p.marital_home_area ? ' - ' + escapeHtml(p.marital_home_area) : ''}</p>
+      <p class="bio">${escapeHtml(p.about_me || '').slice(0, 100)}${p.about_me && p.about_me.length > 100 ? '...' : ''}</p>
+      <button class="view-profile-btn" onclick="window.location.href='profile.html?id=${p.user_id}'" style="margin-top: 10px; background: #7f8c8d; width: 100%;">عرض البروفايل كامل</button>
+      ${actionButtonHtml}
+    `;
+    container.appendChild(card);
+  });
+  
+  document.querySelectorAll('.login-to-send-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      window.location.href = 'login.html';
+    });
+  });
+
+  document.querySelectorAll('.send-req-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      handleSendRequest(e.target.dataset.id);
+    });
+  });
+  
+  renderPagination(result.total, result.page, result.limit);
+}
+
+async function handleSendRequest(receiverId) {
+  const token = localStorage.getItem('token');
+  if (!token) return alert('يجب تسجيل الدخول أولاً');
+  if (!confirm('هل أنت متأكد من إرسال طلب زواج لهذا الحساب؟')) return;
+  
+  try {
+    const res = await fetch('/api/csrf-token');
+    const { csrfToken } = await res.json();
+    
+    const reqRes = await fetch(`/api/requests/${receiverId}/send`, {
+      method: 'POST',
+      headers: { 'Authorization': 'Bearer ' + token, 'CSRF-Token': csrfToken }
+    });
+    const data = await reqRes.json();
+    alert(data.message || data.error);
+  } catch (err) {
+    alert('حدث خطأ في الاتصال');
+  }
+}
+
+function renderPagination(total, page, limit) {
+  const pages = Math.ceil(total / limit);
+  const pag = document.getElementById('pagination');
+  pag.innerHTML = '';
+  for (let i = 1; i <= pages; i++) {
+    const btn = document.createElement('button');
+    btn.textContent = i;
+    if (i === page) btn.className = 'active';
+    btn.onclick = () => loadProfiles(i);
+    pag.appendChild(btn);
+  }
+}
+
+  const applyBtn = document.getElementById('applyFilters');
+  if (applyBtn) {
+    applyBtn.addEventListener('click', () => loadProfiles(1));
+  }
+  
+  // Attach change/input listeners to all single filters for instant updates
+  const autoFilters = [
+    'f_gender', 'f_minAge', 'f_maxAge', 'f_minHeight', 'f_maxHeight', 'f_minWeight', 'f_maxWeight',
+    'f_incomeLevel', 'f_wantsChildren', 'f_smoker', 'f_praysRegularly', 'f_exercises',
+    'f_housingType', 'f_areaType', 'f_hasBeard', 'f_wantsPolygamy'
+  ];
+  
+  autoFilters.forEach(id => {
+    const el = document.getElementById(id);
+    if(el) {
+      if(el.tagName === 'INPUT' && (el.type === 'text' || el.type === 'number')) {
+        el.addEventListener('input', () => {
+          clearTimeout(window.filterTimeout);
+          window.filterTimeout = setTimeout(() => loadProfiles(1), 500);
+        });
+      } else {
+        el.addEventListener('change', () => loadProfiles(1));
+      }
+    }
+  });
+
+loadProfiles();
+</script>
+</body>
+</html>
