@@ -1,0 +1,22 @@
+{
+  "name": "zawaj-site",
+  "version": "1.0.0",
+  "description": "Marriage matching website with registration and filtered browsing",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.7",
+    "csurf": "^1.11.0",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-rate-limit": "^8.6.0",
+    "google-auth-library": "^10.9.1",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "mysql2": "^3.11.0",
+    "sanitize-html": "^2.17.6"
+  }
+}
